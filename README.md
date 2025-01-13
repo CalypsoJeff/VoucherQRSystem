@@ -83,7 +83,7 @@ By leveraging these tools, the development speed and code quality were significa
 ### Clone the Repository
 Clone the repository and navigate into it:
 ```bash
-git clone [https://github.com/CalypsoJeff/URL-Shortener.git](https://github.com/CalypsoJeff/URL-Shortener.git)
+git clone [[https://github.com/CalypsoJeff/URL-Shortener.git](https://github.com/CalypsoJeff/URL-Shortener.git)](https://github.com/CalypsoJeff/VoucherQRSystem.git)
 cd VoucherQRSystem
 npm install
 
