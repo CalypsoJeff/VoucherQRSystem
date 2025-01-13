@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-100">
+    <div class="min-h-screen flex flex-col">
+        <header class="bg-white shadow">
+            <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+                <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
+                <nav>
+                    <a href="/settings" class="text-gray-600 hover:text-gray-900 mr-4">Settings</a>
+                    <a href="/logout" class="text-gray-600 hover:text-gray-900">Logout</a>
+                </nav>
+            </div>
+        </header>
+
+        <main class="flex-grow">
+            <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+                <div class="px-4 py-6 sm:px-0">
+                    <div class="mb-8">
+                        <button id="generateQR"
+                            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                            Generate QR Code
+                        </button>
+                    </div>
+                    <div id="qrResult" class="mb-8"></div>
+                    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                        <div class="px-4 py-5 sm:px-6">
+                            <h2 class="text-lg leading-6 font-medium text-gray-900">Existing Vouchers</h2>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table id="voucherTable" class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Number</th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Generated Date</th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Expiry Date</th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <% if (vouchers && vouchers.length> 0) { %>
+                                        <% vouchers.forEach(function(voucher) { %>
+                                            <tr>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <%= voucher.VoucherCode %>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <%= new Date(voucher.GeneratedDate).toLocaleString() %>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <%= new Date(voucher.ExpiryDate).toLocaleString() %>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                    <button onclick="exportPDF('<%= voucher.VoucherCode %>')"
+                                                        class="text-indigo-600 hover:text-indigo-900 mr-2">Export
+                                                        PDF</button>
+                                                    <button onclick="printVoucher('<%= voucher.VoucherCode %>')"
+                                                        class="text-indigo-600 hover:text-indigo-900">Print</button>
+                                                </td>
+                                            </tr>
+                                            <% }); %>
+                                                <% } else { %>
+                                                    <tr>
+                                                        <td colspan="4"
+                                                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                                            No vouchers available</td>
+                                                    </tr>
+                                                    <% } %>
+                                </tbody>
+                            </table>
+                            <div class="flex justify-center mt-4">
+                                <nav class="inline-flex shadow-sm">
+                                    <% if (currentPage> 1) { %>
+                                        <a href="/dashboard?page=<%= currentPage - 1 %>&limit=<%= limit %>"
+                                            class="px-4 py-2 bg-gray-200 text-gray-800 hover:bg-gray-300">Previous</a>
+                                        <% } %>
+
+                                            <span class="px-4 py-2 bg-blue-500 text-white">
+                                                Page <%= currentPage %> of <%= totalPages %>
+                                            </span>
+
+                                            <% if (currentPage < totalPages) { %>
+                                                <a href="/dashboard?page=<%= currentPage + 1 %>&limit=<%= limit %>"
+                                                    class="px-4 py-2 bg-gray-200 text-gray-800 hover:bg-gray-300">Next</a>
+                                                <% } %>
+                                </nav>
+                            </div>
+
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="bg-white">
+            <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+                <p class="text-center text-gray-500 text-sm">&copy; 2025 Jephy Jayan Varghese. All rights reserved.</p>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Generate QR code
+        document.getElementById("generateQR").addEventListener("click", async () => {
+            try {
+                const response = await fetch("/generate-qr", { method: "POST" });
+                const result = await response.json();
+
+                if (result.success) {
+                    // Show SweetAlert2 notification
+                    Swal.fire({
+                        title: 'QR Code Generated!',
+                        text: `Voucher Number: ${result.data.number}`,
+                        imageUrl: result.data.qrCodeImage,
+                        imageWidth: 200,
+                        imageHeight: 200,
+                        imageAlt: 'Generated QR Code',
+                        icon: 'success',
+                        confirmButtonText: 'Okay'
+                    });
+
+                    // Display QR Code and message in the result section
+                    const qrResult = document.getElementById("qrResult");
+                    qrResult.innerHTML = `
+                <div class="bg-white shadow overflow-hidden sm:rounded-lg p-6 text-center">
+                    <h3 class="text-lg leading-6 font-medium text-green-600 mb-4">${result.message}</h3>
+                    <img src="${result.data.qrCodeImage}" alt="Generated QR Code" class="mx-auto mb-4">
+                    <p class="text-sm text-gray-500">Voucher Number: ${result.data.number}</p>
+                    <p class="text-sm text-gray-500">Generated Date: ${new Date(result.data.generatedDate).toLocaleString()}</p>
+                    <p class="text-sm text-gray-500">Expiry Date: ${new Date(result.data.expiryDate).toLocaleString()}</p>
+                    <div class="mt-4">
+                        <button onclick="exportPDF('${result.data.number}')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded mr-2">
+                            Export PDF
+                        </button>
+                        <button onclick="printVoucher('${result.data.number}')" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                            Print
+                        </button>
+                    </div>
+                </div>
+            `;
+
+                    // Add new row to the voucher table
+                    const tableBody = document.querySelector("#voucherTable tbody");
+                    const newRow = document.createElement("tr");
+                    newRow.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${result.data.number}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(result.data.generatedDate).toLocaleString()}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(result.data.expiryDate).toLocaleString()}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <button onclick="exportPDF('${result.data.number}')" class="text-indigo-600 hover:text-indigo-900 mr-2">Export PDF</button>
+                    <button onclick="printVoucher('${result.data.number}')" class="text-indigo-600 hover:text-indigo-900">Print</button>
+                </td>
+            `;
+                    tableBody.insertBefore(newRow, tableBody.firstChild);
+
+                    // Remove "No vouchers available" row if it exists
+                    const noVouchersRow = tableBody.querySelector("tr td[colspan='4']");
+                    if (noVouchersRow) {
+                        noVouchersRow.parentElement.remove();
+                    }
+                } else {
+                    Swal.fire({
+                        title: 'Failed!',
+                        text: 'Failed to generate QR Code. Please try again.',
+                        icon: 'error',
+                        confirmButtonText: 'Okay'
+                    });
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'An error occurred while generating the QR Code.',
+                    icon: 'error',
+                    confirmButtonText: 'Okay'
+                });
+            }
+        });
+
+        // Export voucher as PDF
+        function exportPDF(voucherCode) {
+            window.open(`/pdf/generate/${voucherCode}`, '_blank');
+        }
+
+        // Print voucher PDF directly
+        function printVoucher(voucherCode) {
+            const newWindow = window.open(`/pdf/generate/${voucherCode}?print=true`, '_blank');
+            newWindow.addEventListener("load", () => {
+                newWindow.print();
+            });
+        }
+    </script>
+</body>
+
+</html>
