@@ -114,6 +114,7 @@
     </footer>
 
     <script>
+        // Handle form validation and submission
         document.getElementById("settingsForm").addEventListener("submit", function (e) {
             const title = document.getElementById("title").value.trim();
             const maxExpiryDays = parseInt(document.getElementById("maxExpiryDays").value);
@@ -158,15 +159,37 @@
 
             // Show SweetAlert2 with error messages if validation fails
             if (errorMessages.length > 0) {
-                e.preventDefault();
+                e.preventDefault(); // Prevent form submission
                 Swal.fire({
                     icon: "error",
                     title: "Validation Error",
                     html: `<ul style="text-align: left;">${errorMessages.map(msg => `<li>${msg}</li>`).join('')}</ul>`,
                 });
+                return;
+            }
+        });
+
+        // Display SweetAlert based on URL query parameters
+        document.addEventListener("DOMContentLoaded", function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get("success") === "true") {
+                Swal.fire({
+                    icon: "success",
+                    title: "Settings Saved",
+                    text: "Your settings have been saved successfully!",
+                }).then(() => {
+                    window.location.href = "/dashboard"; // Redirect after confirmation
+                });
+            } else if (urlParams.get("error") === "true") {
+                Swal.fire({
+                    icon: "error",
+                    title: "Error",
+                    text: "Failed to save settings. Please try again.",
+                });
             }
         });
     </script>
+
 
 
 </body>
